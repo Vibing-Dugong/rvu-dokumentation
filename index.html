@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Radiology RVU Performance Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app">
+    <header class="top-panel">
+      <div class="counter-wrap">
+        <p class="label">Tagesleistung</p>
+        <h1 id="rvuTotal" class="rvu-total">0.00 RVU</h1>
+        <p id="activeDateText" class="subtle"></p>
+      </div>
+      <div class="badge-wrap">
+        <p class="label">Level</p>
+        <div id="badge" class="badge badge-iron" role="img" aria-label="Eisen">
+          <span class="badge-icon" aria-hidden="true">
+            <svg viewBox="0 0 48 48" focusable="false">
+              <path d="M24 4 8 14v12c0 8 5.2 14.9 16 18 10.8-3.1 16-10 16-18V14L24 4Z"></path>
+              <path d="M24 14 18 20h4v12h4V20h4l-6-6Z"></path>
+            </svg>
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <section class="progress-panel">
+      <div class="progress-meta">
+        <span id="progressLabel">Fortschritt zu Bronze</span>
+        <span id="progressNumbers">0.00 / 10.00</span>
+      </div>
+      <div class="progress-track">
+        <div id="progressFill" class="progress-fill"></div>
+      </div>
+    </section>
+
+    <section class="input-panel">
+      <div class="quick-code-wrap">
+        <label for="quickCodeInput">Quick-Code (2-stellig)</label>
+        <input id="quickCodeInput" type="text" inputmode="numeric" maxlength="2" autocomplete="off" placeholder="z. B. 21">
+      </div>
+      <div class="select-wrap">
+        <label for="categorySelect">Kategorie</label>
+        <select id="categorySelect"></select>
+      </div>
+      <div class="select-wrap">
+        <label for="studySelect">Untersuchung</label>
+        <select id="studySelect"></select>
+      </div>
+      <button id="addStudyBtn" class="add-btn" type="button">Hinzufügen</button>
+    </section>
+
+    <section class="history-panel">
+      <div class="panel-head">
+        <h2>Heute</h2>
+        <div class="actions">
+          <button id="exportBtn" type="button">Export JSON</button>
+          <button id="importBtn" type="button">Import JSON</button>
+          <input id="importFileInput" type="file" accept=".json,application/json" hidden>
+        </div>
+      </div>
+      <ul id="todayHistoryList" class="history-list"></ul>
+    </section>
+
+    <section class="stats-panel">
+      <div class="panel-head">
+        <h2>Langzeit-Statistik</h2>
+      </div>
+      <div class="stat-grid">
+        <article class="stat-card">
+          <p class="stat-label">Tage gesamt</p>
+          <p id="statDays" class="stat-value">0</p>
+        </article>
+        <article class="stat-card">
+          <p class="stat-label">RVU gesamt</p>
+          <p id="statRvu" class="stat-value">0.00</p>
+        </article>
+        <article class="stat-card">
+          <p class="stat-label">Ø RVU/Tag</p>
+          <p id="statAvg" class="stat-value">0.00</p>
+        </article>
+      </div>
+      <ul id="dayArchiveList" class="archive-list"></ul>
+    </section>
+  </main>
+
+  <template id="deleteIconTemplate">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 7h2v8h-2v-8zm4 0h2v8h-2v-8zM7 10h2v8H7v-8z"></path>
+    </svg>
+  </template>
+
+  <script src="script.js"></script>
+</body>
+</html>
