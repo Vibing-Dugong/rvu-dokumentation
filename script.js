@@ -10,7 +10,7 @@ const APP_CONFIG = {
   categories: [
     {
       id: "cat-1",
-      name: "Röntgen/Skelett",
+      name: "1 Röntgen",
       studies: [
         { code: "11", name: "Rö-Thx liegend", rvu: 0.18 },
         { code: "12", name: "Rö-Thx 2 Eb.", rvu: 0.21 },
@@ -20,7 +20,7 @@ const APP_CONFIG = {
     },
     {
       id: "cat-2",
-      name: "Kopf",
+      name: "2 Kopf",
       studies: [
         { code: "21", name: "CT Kopf nativ", rvu: 0.83 },
         { code: "22", name: "CT Kopf/Hals nativ", rvu: 1.10 },
@@ -31,7 +31,7 @@ const APP_CONFIG = {
     },
     {
       id: "cat-3",
-      name: "Hals",
+      name: "3 Hals",
       studies: [
         { code: "31", name: "CT Hals nativ", rvu: 0.98 },
         { code: "32", name: "CT Hals mit KM", rvu: 1.19 },
@@ -40,7 +40,7 @@ const APP_CONFIG = {
     },
     {
       id: "cat-4",
-      name: "Thorax",
+      name: "4 Thorax",
       studies: [
         { code: "41", name: "CT Thorax nativ", rvu: 1.05 },
         { code: "42", name: "CT Thorax arteriell", rvu: 1.13 },
@@ -51,24 +51,27 @@ const APP_CONFIG = {
     },
     {
       id: "cat-5",
-      name: "Oberbauch",
+      name: "5 Oberbauch",
       studies: [
         { code: "51", name: "CT Oberbauch arteriell", rvu: 1.13 }
       ]
     },
     {
       id: "cat-6",
-      name: "Abd/Be",
+      name: "6 Thx/Abd/Be Kombinationen",
       studies: [
-        { code: "61", name: "CT Abd/Be nativ", rvu: 1.70 },
-        { code: "62", name: "CT Abd/Be arteriell", rvu: 1.77 },
-        { code: "63", name: "CT Abd/Be venös", rvu: 1.77 },
-        { code: "64", name: "CT Abd/Be low-dose", rvu: 1.19 }
+        { code: "61", name: "CT Thx/Abd/Be nativ", rvu: 2.57 },
+        { code: "62", name: "CT Thx/Abd/Be arteriell", rvu: 2.62 },
+        { code: "63", name: "CT Thx/Abd/Be venös", rvu: 2.62 },
+        { code: "64", name: "CT Abd/Be nativ", rvu: 1.70 },
+        { code: "65", name: "CT Abd/Be arteriell", rvu: 1.77 },
+        { code: "66", name: "CT Abd/Be venös", rvu: 1.77 },
+        { code: "67", name: "CT Abd/Be low-dose", rvu: 1.19 }
       ]
     },
     {
       id: "cat-7",
-      name: "Becken",
+      name: "7 Becken",
       studies: [
         { code: "71", name: "CT Becken nativ", rvu: 1.06 },
         { code: "72", name: "CT Becken arteriell", rvu: 1.13 },
@@ -77,12 +80,21 @@ const APP_CONFIG = {
     },
     {
       id: "cat-8",
-      name: "Sonstige",
+      name: "8 Sonstige",
       studies: [
         { code: "81", name: "CT Becken-Bein-Angio", rvu: 1.19 },
         { code: "82", name: "CT Gelenk", rvu: 0.98 },
         { code: "83", name: "CT Plasmo", rvu: 2.44 },
         { code: "84", name: "CT Herz", rvu: 1.71 }
+      ]
+    },
+    {
+      id: "cat-9",
+      name: "9 Orga",
+      studies: [
+        { code: "91", name: "Aufklärung", rvu: 0.18 },
+        { code: "92", name: "i.v.-Zugang", rvu: 0.27 },
+        { code: "93", name: "Interventionsaufklärung", rvu: 1.13 }
       ]
     }
   ]
@@ -98,6 +110,7 @@ const elements = {
   categorySelect: document.getElementById("categorySelect"),
   studySelect: document.getElementById("studySelect"),
   addStudyBtn: document.getElementById("addStudyBtn"),
+  oaModeToggle: document.getElementById("oaModeToggle"),
   quickCodeInput: document.getElementById("quickCodeInput"),
   todayHistoryList: document.getElementById("todayHistoryList"),
   exportBtn: document.getElementById("exportBtn"),
@@ -114,6 +127,7 @@ const state = {
   activeDate: getTodayKey(),
   todayEntries: [],
   historyDays: [],
+  oaModeEnabled: false,
   codeMap: buildCodeMap(APP_CONFIG.categories)
 };
 
@@ -202,9 +216,13 @@ function hydrateState() {
   try {
     const parsed = JSON.parse(raw);
     const storedToday = parsed.todayData || {};
+    const storedSettings = parsed.settings || {};
     state.historyDays = Array.isArray(parsed.historyDays)
       ? parsed.historyDays.filter(isValidDayRecord)
       : [];
+    state.oaModeEnabled = typeof storedSettings.oaModeEnabled === "boolean"
+      ? storedSettings.oaModeEnabled
+      : false;
 
     if (storedToday.date && storedToday.date !== state.activeDate && Array.isArray(storedToday.entries) && storedToday.entries.length > 0) {
       upsertHistoryDay(buildDayRecord(storedToday.date, storedToday.entries, "local"));
@@ -226,6 +244,13 @@ function wireEvents() {
   elements.addStudyBtn.addEventListener("click", () => {
     const selectedCode = elements.studySelect.value;
     addStudyByCode(selectedCode);
+  });
+
+  elements.oaModeToggle.addEventListener("change", (event) => {
+    state.oaModeEnabled = Boolean(event.target.checked);
+    persistState();
+    renderAll();
+    elements.quickCodeInput.focus();
   });
 
   elements.quickCodeInput.addEventListener("keydown", (event) => {
@@ -275,13 +300,17 @@ function addStudyByCode(code) {
   }
 
   const now = new Date();
+  const multiplier = state.oaModeEnabled ? 0.5 : 1;
+  const appliedRvu = roundRvu(mapped.rvu * multiplier);
   const newEntry = {
     id: crypto.randomUUID(),
     code: mapped.code,
     name: mapped.name,
     categoryId: mapped.categoryId,
     categoryName: mapped.categoryName,
-    rvu: mapped.rvu,
+    rvu: appliedRvu,
+    baseRvu: roundRvu(mapped.rvu),
+    oaModeApplied: state.oaModeEnabled,
     timestampISO: now.toISOString()
   };
 
@@ -349,6 +378,7 @@ function renderAll() {
   const badgeMeta = getBadgeMeta(totalRvu);
   const progress = getProgressValues(totalRvu, badgeMeta);
 
+  elements.oaModeToggle.checked = state.oaModeEnabled;
   elements.activeDateText.textContent = `Datum: ${formatDate(state.activeDate)}`;
   elements.rvuTotal.textContent = `${formatRvu(totalRvu)} RVU`;
 
@@ -449,27 +479,59 @@ function persistState() {
       date: state.activeDate,
       entries: state.todayEntries
     },
+    settings: {
+      oaModeEnabled: state.oaModeEnabled
+    },
     historyDays: state.historyDays
   };
   localStorage.setItem(APP_CONFIG.storageKey, JSON.stringify(payload));
 }
 
-function exportTodayData() {
+async function exportTodayData() {
+  const currentDayRecord = buildDayRecord(state.activeDate, state.todayEntries, "local");
+  const allDays = dedupeDaysByDate([currentDayRecord, ...state.historyDays])
+    .sort((a, b) => a.date.localeCompare(b.date));
+
   const payload = {
-    type: "rvu-day-export",
-    version: 1,
+    type: "rvu-stats-export",
+    version: 2,
     exportedAt: new Date().toISOString(),
-    date: state.activeDate,
-    totalRvu: roundRvu(getTodayTotal()),
-    entries: state.todayEntries
+    settings: {
+      oaModeEnabled: state.oaModeEnabled
+    },
+    days: allDays
   };
 
   const json = JSON.stringify(payload, null, 2);
+
+  if (window.showSaveFilePicker) {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: "rvu-statistik.json",
+        types: [
+          {
+            description: "JSON-Dateien",
+            accept: { "application/json": [".json"] }
+          }
+        ]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(json);
+      await writable.close();
+      return;
+    } catch (error) {
+      if (error && error.name === "AbortError") {
+        return;
+      }
+      console.warn("showSaveFilePicker fehlgeschlagen, nutze Download-Fallback:", error);
+    }
+  }
+
   const blob = new Blob([json], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `rvu-export-${state.activeDate}.json`;
+  a.download = "rvu-statistik.json";
   document.body.append(a);
   a.click();
   a.remove();
@@ -485,10 +547,14 @@ async function handleImportFile(event) {
   try {
     const text = await file.text();
     const parsed = JSON.parse(text);
-    const importedDays = parseImportedDays(parsed);
+    const { days: importedDays, settings: importedSettings } = parseImportedData(parsed);
 
     if (importedDays.length === 0) {
       throw new Error("Keine gültigen Tagesdaten im Import gefunden.");
+    }
+
+    if (importedSettings && typeof importedSettings.oaModeEnabled === "boolean") {
+      state.oaModeEnabled = importedSettings.oaModeEnabled;
     }
 
     importedDays.forEach((day) => {
@@ -509,18 +575,25 @@ async function handleImportFile(event) {
   }
 }
 
-function parseImportedDays(parsed) {
-  if (parsed && parsed.date && Array.isArray(parsed.entries)) {
-    return [buildDayRecord(parsed.date, parsed.entries, "import")];
-  }
-
+function parseImportedData(parsed) {
   if (parsed && Array.isArray(parsed.days)) {
-    return parsed.days
+    const importedDays = parsed.days
       .filter((day) => day && day.date && Array.isArray(day.entries))
       .map((day) => buildDayRecord(day.date, day.entries, "import"));
+    return {
+      days: importedDays,
+      settings: parsed.settings || null
+    };
   }
 
-  return [];
+  if (parsed && parsed.date && Array.isArray(parsed.entries)) {
+    return {
+      days: [buildDayRecord(parsed.date, parsed.entries, "import")],
+      settings: null
+    };
+  }
+
+  return { days: [], settings: null };
 }
 
 function upsertHistoryDay(dayRecord) {

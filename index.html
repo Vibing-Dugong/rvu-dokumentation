@@ -51,14 +51,23 @@
         <select id="studySelect"></select>
       </div>
       <button id="addStudyBtn" class="add-btn" type="button">Hinzufügen</button>
+      <div class="oa-mode-wrap">
+        <span class="oa-mode-label">OA-Modus</span>
+        <label class="switch" for="oaModeToggle">
+          <input id="oaModeToggle" type="checkbox" role="switch" aria-label="OA-Modus">
+          <span class="switch-track" aria-hidden="true">
+            <span class="switch-thumb"></span>
+          </span>
+        </label>
+      </div>
     </section>
 
     <section class="history-panel">
       <div class="panel-head">
         <h2>Heute</h2>
         <div class="actions">
-          <button id="exportBtn" type="button">Export JSON</button>
-          <button id="importBtn" type="button">Import JSON</button>
+          <button id="exportBtn" type="button">Statistik exportieren</button>
+          <button id="importBtn" type="button">Statistik importieren</button>
           <input id="importFileInput" type="file" accept=".json,application/json" hidden>
         </div>
       </div>

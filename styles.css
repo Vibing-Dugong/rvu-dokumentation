@@ -194,7 +194,7 @@ body {
 
 .input-panel {
   display: grid;
-  grid-template-columns: minmax(170px, 1fr) minmax(170px, 1fr) minmax(260px, 2fr) auto;
+  grid-template-columns: minmax(170px, 1fr) minmax(170px, 1fr) minmax(260px, 2fr) auto auto;
   gap: 10px;
   align-items: end;
 }
@@ -230,6 +230,68 @@ button:focus {
   color: #0c1a22;
   font-weight: 700;
   border: none;
+}
+
+.oa-mode-wrap {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+}
+
+.oa-mode-label {
+  color: var(--muted);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.switch input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+}
+
+.switch-track {
+  width: 54px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #101010;
+  display: inline-flex;
+  align-items: center;
+  padding: 3px;
+  transition: background-color 140ms ease-out, border-color 140ms ease-out;
+}
+
+.switch-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #8d8d8d;
+  transition: transform 140ms ease-out, background-color 140ms ease-out;
+}
+
+.switch input:checked + .switch-track {
+  background: color-mix(in srgb, var(--success), #0f0f0f 55%);
+  border-color: color-mix(in srgb, var(--success), #000 45%);
+}
+
+.switch input:checked + .switch-track .switch-thumb {
+  transform: translateX(24px);
+  background: #d5f4e7;
+}
+
+.switch input:focus-visible + .switch-track {
+  outline: 2px solid color-mix(in srgb, var(--accent), white 15%);
+  outline-offset: 2px;
 }
 
 .panel-head {
